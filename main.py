@@ -18,6 +18,9 @@ bot = interactions.Client(os.getenv('discord_token'))
 async def new_sotw(ctx: interactions.CommandContext, name: str, submitter: str, seed: str):
     """What's the flagstring?"""
     channel = discord.utils.get(ctx.guild.channels, id=1017605185931071548)
+    if not os.path.exists('sotw_db.json'):
+        with open('sotw_db.json', 'w') as newfile:
+            newfile.write(json.dumps({}))
     with open('sotw_db.json') as x:
         sotw_db = json.load(x)
     await channel.send(f'-----------------------------------\n**{name}** by: {submitter}, rolled on'
@@ -37,6 +40,9 @@ async def new_sotw(ctx: interactions.CommandContext, name: str, submitter: str, 
 async def done(ctx: interactions.CommandContext, time: str):
     """Enter your time in 01:23:45 format"""
     channel = discord.utils.get(ctx.guild.channels, id=1017605185931071548)
+    if not os.path.exists('sotw_db.json'):
+        with open('sotw_db.json', 'w') as newfile:
+            newfile.write(json.dumps({}))
     with open('sotw_db.json') as x:
         sotw_db = json.load(x)
     rankings = await channel.get_message(sotw_db[str(len(sotw_db))]['rankings_msg_id'])

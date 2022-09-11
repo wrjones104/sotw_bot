@@ -6,10 +6,14 @@ import discord
 import interactions
 from dotenv import load_dotenv
 
+from functions.string_functions import parse_done_time
+
 load_dotenv()
 
 bot = interactions.Client(token=os.getenv('discord_token'), intents=interactions.Intents.GUILD_PRESENCES | interactions.Intents.DEFAULT)
 
+def sortdict(e):
+    return e['time']
 
 @bot.command()
 @interactions.option(name="name")
@@ -71,13 +75,22 @@ async def done(ctx: interactions.CommandContext, time: str):
     if str(ctx.user) in sotw_db[str(len(sotw_db))]['runners']:
         message = f"WTF {ctx.user}, you already finished this race!"
     else:
-        sotw_db[str(len(sotw_db))]['runners'][str(ctx.user)] = {"finish_time": time,
+        try:
+            dt = parse_done_time(time)
+        except:
+            await ctx.send("Invalid time format!", ephemeral=True)
+            return None
+        sotw_db[str(len(sotw_db))]['runners'][str(ctx.user)] = {"finish_time": str(dt),
                                                                 "timestamp": str(datetime.datetime.now().strftime(
                                                                     "%b %d %Y %H:%M:%S"))}
-        message = f"Wow, great job {ctx.user}, you finished in {time}!"
+        message = f"Wow, great job {ctx.user}, you finished in {str(dt)}!"
         updated_rankings_msg = ""
+        list = []
         for x, y in sotw_db[str(len(sotw_db))]['runners'].items():
-            updated_rankings_msg += f"\n{x}: {y['finish_time']}"
+            list.append({'name': x, 'time': y['finish_time']})
+            list.sort(key=sortdict)
+            for x in list:
+                updated_rankings_msg += f"\n{x['name']} - {x['time']}"
         updated_participants_msg = f"{len(sotw_db[str(len(sotw_db))]['runners'].values())} participants"
         await rankings.edit(content=updated_rankings_msg)
         await participants.edit(content=updated_participants_msg)
@@ -85,7 +98,7 @@ async def done(ctx: interactions.CommandContext, time: str):
             updatefile.write(json.dumps(sotw_db))
         role = discord.utils.get(ctx.guild.roles, name="seed-of-the-week")
         await ctx.member.add_role(role=role, guild_id=834193269311143977)
-    await ctx.send(message)
+    await ctx.send(message, ephemeral=True)
 
 
 bot.start()

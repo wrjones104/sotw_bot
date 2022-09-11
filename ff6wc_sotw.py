@@ -24,9 +24,9 @@ async def new_sotw(ctx: interactions.CommandContext, name: str, submitter: str, 
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: {seed}\n-----------------------------------'
-    sotw_channel = discord.utils.get(ctx.guild.channels, id=1017605185931071548)
-    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=1017863469657243750)
-    spoiler_channel = discord.utils.get(ctx.guild.channels, id=1017863496429469757)
+    sotw_channel = discord.utils.get(ctx.guild.channels, id=682266472466481158)
+    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=682266947278209113)
+    spoiler_channel = discord.utils.get(ctx.guild.channels, id=682267113758523470)
     if not os.path.exists('sotw_db.json'):
         with open('sotw_db.json', 'w') as newfile:
             newfile.write(json.dumps({}))
@@ -49,7 +49,7 @@ async def new_sotw(ctx: interactions.CommandContext, name: str, submitter: str, 
                                  "runners": {}}
     with open('sotw_db.json', 'w') as updatefile:
         updatefile.write(json.dumps(sotw_db))
-    role = discord.utils.get(ctx.guild.roles, id=1017863537588195428)
+    role = discord.utils.get(ctx.guild.roles, id=682268600236638215)
     print(role.name)
     #TODO: why does this not work?
     # for x in ctx.guild.members:
@@ -66,10 +66,8 @@ async def new_sotw(ctx: interactions.CommandContext, name: str, submitter: str, 
 @interactions.option(description="Enter your time for this race!")
 async def done(ctx: interactions.CommandContext, time: str):
     """Enter your time in 01:23:45 format"""
-    sotw_channel = discord.utils.get(ctx.guild.channels, id=1017605185931071548)
-    print(sotw_channel)
-    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=1017863469657243750)
-    print(leaderboard_channel)
+    sotw_channel = discord.utils.get(ctx.guild.channels, id=682266472466481158)
+    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=682266947278209113)
     with open('sotw_db.json') as x:
         sotw_db = json.load(x)
     rankings = await leaderboard_channel.get_message(sotw_db[str(len(sotw_db))]['rankings_msg_id'])
@@ -101,7 +99,7 @@ async def done(ctx: interactions.CommandContext, time: str):
         with open('sotw_db.json', 'w') as updatefile:
             updatefile.write(json.dumps(sotw_db))
         role = discord.utils.get(ctx.guild.roles, name="seed-of-the-week")
-        await ctx.member.add_role(role=role, guild_id=834193269311143977)
+        await ctx.member.add_role(role=role, guild_id=666661907628949504)
     await ctx.send(message, ephemeral=True)
 
 

@@ -1,7 +1,11 @@
 import datetime
 
 
-def parse_done_time(input:str) -> datetime.timedelta:
+def sortdict(e):
+    return e['time']
+
+
+def parse_done_time(input: str) -> datetime.timedelta:
     """
     Parses the input string representing the done time for a race. We expect something like this:
         01:23:45.6789
@@ -22,6 +26,11 @@ def parse_done_time(input:str) -> datetime.timedelta:
     if not isinstance(input, str):
         emessage = f"Expected time input of type str. Found type {type(input)}"
         raise Exception(emessage)
+
+    input = input.replace(",", ":")
+    input = input.replace("h", ":")
+    input = input.replace("m", ":")
+    input = input.replace("s", ":")
 
     if not 0 < input.count(":") < 3:
         emessage = f"Expected time in the format of hh:mm:ss.xxxx or mm:ss.xxxx. Found {input}"

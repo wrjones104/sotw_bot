@@ -1,6 +1,7 @@
 import os
 
 import discord
+from discord.utils import get
 from discord import app_commands, Interaction, TextStyle
 from discord.ui import Modal, TextInput
 from dotenv import load_dotenv
@@ -51,6 +52,18 @@ client = aclient()
 tree = app_commands.CommandTree(client)
 
 sotw_group = app_commands.Group(name='sotw', description="Seed of the Week Commands")
+
+
+@client.event
+async def on_message(message):
+    try:
+        sotw_channel = get(message.guild.channels, name='seed-of-the-week')
+        if message.channel == sotw_channel:
+            await message.author.send(f"The #{sotw_channel} channel only accepts the slash commands `/sotw done` or "
+                                      f"`/sotw forfeit`.")
+            await message.delete()
+    except AttributeError:
+        pass
 
 
 @sotw_group.command(name="done", description="Enter your time for the Seed of the Week")

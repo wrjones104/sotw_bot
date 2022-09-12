@@ -19,8 +19,8 @@ def sortdict(e):
     return e['time']
 
 
-@bot.command(scope=ids.ff6wc_guild)
-async def sotw():
+@bot.command(scope=ids.jws_guild)
+async def sotw(ctx: interactions.CommandContext):
     """Commands for the Seed of the Week"""
     pass
 
@@ -57,9 +57,9 @@ async def modal(ctx: interactions.CommandContext, name: str, submitter: str, see
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: {seed}\n-----------------------------------'
-    sotw_channel = discord.utils.get(ctx.guild.channels, id=ids.ff6wc_sotw)
-    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=ids.ff6wc_leaderboards)
-    spoiler_channel = discord.utils.get(ctx.guild.channels, id=ids.ff6wc_spoilers)
+    sotw_channel = discord.utils.get(ctx.guild.channels, id=ids.jws_sotw)
+    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=ids.jws_leaderboards)
+    spoiler_channel = discord.utils.get(ctx.guild.channels, id=ids.jws_spoilers)
     if not os.path.exists('sotw_db.json'):
         with open('sotw_db.json', 'w') as newfile:
             newfile.write(json.dumps({}))
@@ -82,7 +82,7 @@ async def modal(ctx: interactions.CommandContext, name: str, submitter: str, see
                                  "runners": {}}
     with open('sotw_db.json', 'w') as updatefile:
         updatefile.write(json.dumps(sotw_db))
-    # role = discord.utils.get(ctx.guild.roles, id=ids.ff6wc_role)
+    # role = discord.utils.get(ctx.guild.roles, id=ids.jws_role)
     # for x in ctx.guild.members:
     #     try:
     #         await x.remove_role(role=role, guild_id=834193269311143977)
@@ -97,8 +97,8 @@ async def modal(ctx: interactions.CommandContext, name: str, submitter: str, see
 @interactions.option(description="Enter your time for this race!")
 async def done(ctx: interactions.CommandContext, time: str):
     """Enter your time for the Seed of the Week"""
-    sotw_channel = discord.utils.get(ctx.guild.channels, id=ids.ff6wc_sotw)
-    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=ids.ff6wc_leaderboards)
+    sotw_channel = discord.utils.get(ctx.guild.channels, id=ids.jws_sotw)
+    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=ids.jws_leaderboards)
     with open('sotw_db.json') as x:
         sotw_db = json.load(x)
     rankings = await leaderboard_channel.get_message(sotw_db[str(len(sotw_db))]['rankings_msg_id'])
@@ -130,16 +130,16 @@ async def done(ctx: interactions.CommandContext, time: str):
         await participants.edit(content=updated_participants_msg)
         with open('sotw_db.json', 'w') as updatefile:
             updatefile.write(json.dumps(sotw_db))
-        role = discord.utils.get(ctx.guild.roles, id=ids.ff6wc_role)
-        await ctx.member.add_role(role=role, guild_id=ids.ff6wc_guild)
+        role = discord.utils.get(ctx.guild.roles, id=ids.jws_role)
+        await ctx.member.add_role(role=role, guild_id=ids.jws_guild)
     await ctx.send(message, ephemeral=True)
 
 
 @sotw.subcommand()
 async def forfeit(ctx: interactions.CommandContext):
     """You can't take it back!"""
-    sotw_channel = discord.utils.get(ctx.guild.channels, id=ids.ff6wc_sotw)
-    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=ids.ff6wc_leaderboards)
+    sotw_channel = discord.utils.get(ctx.guild.channels, id=ids.jws_sotw)
+    leaderboard_channel = discord.utils.get(ctx.guild.channels, id=ids.jws_leaderboards)
     with open('sotw_db.json') as x:
         sotw_db = json.load(x)
     rankings = await leaderboard_channel.get_message(sotw_db[str(len(sotw_db))]['rankings_msg_id'])
@@ -166,8 +166,8 @@ async def forfeit(ctx: interactions.CommandContext):
         await participants.edit(content=updated_participants_msg)
         with open('sotw_db.json', 'w') as updatefile:
             updatefile.write(json.dumps(sotw_db))
-        role = discord.utils.get(ctx.guild.roles, id=ids.ff6wc_role)
-        await ctx.member.add_role(role=role, guild_id=ids.ff6wc_guild)
+        role = discord.utils.get(ctx.guild.roles, id=ids.jws_role)
+        await ctx.member.add_role(role=role, guild_id=ids.jws_guild)
     await ctx.send(message, ephemeral=True)
 
 

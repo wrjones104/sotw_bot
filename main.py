@@ -74,6 +74,6 @@ async def sotw_new_command(interaction: Interaction):
     await interaction.followup.send(f"New SotW is live! Check it out @ #seed-of-the-week!")
 
 
-tree.add_command(sotw_group, guild=discord.Object(id=ids.jws_guild))
+tree.add_command(sotw_group, guild=discord.Object(id=ids.ff6wc_guild))
 
 client.run(os.getenv('discord_token'))

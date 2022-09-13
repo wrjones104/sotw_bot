@@ -20,7 +20,7 @@ class aclient(discord.Client):
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:
-            await tree.sync(guild=discord.Object(id=ids.ff6wc_guild))
+            await tree.sync(guild=discord.Object(id=ids.jws_guild))
             self.synced = True
         print(f"We have logged in as {self.user}.")
 
@@ -87,6 +87,6 @@ async def sotw_new_command(interaction: Interaction):
     await interaction.followup.send(f"New SotW is live! Check it out @ #seed-of-the-week!")
 
 
-tree.add_command(sotw_group, guild=discord.Object(id=ids.ff6wc_guild))
+tree.add_command(sotw_group, guild=discord.Object(id=ids.jws_guild))
 
 client.run(os.getenv('discord_token'))

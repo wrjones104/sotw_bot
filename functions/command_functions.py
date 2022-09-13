@@ -93,6 +93,6 @@ async def enter_time(ctx, time):
         await participants.edit(content=updated_participants_msg)
         with open('sotw_db.json', 'w') as updatefile:
             updatefile.write(json.dumps(sotw_db))
-        role = get(ctx.guild.roles, id=ids.jws_role)
+        role = get(ctx.guild.roles, name="seed-of-the-week")
         await ctx.user.add_roles(role)
     await ctx.response.send_message(message, ephemeral=True)

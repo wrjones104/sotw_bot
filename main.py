@@ -79,19 +79,25 @@ async def sotw_ff_command(interaction: Interaction):
 
 @sotw_group.command(name="new", description="Create a new Seed of the Week")
 async def sotw_new_command(interaction: Interaction):
-    modal = NewSotwModal("Create a new Seed of the Week")
-    await interaction.response.send_modal(modal)
-    await modal.wait()
-    await command_functions.create_new_sotw(interaction, str(modal.sotwname), str(modal.sotwsubmitter),
-                                            str(modal.sotwseed))
-    await interaction.followup.send(f"New SotW is live! Check it out @ #seed-of-the-week!")
+    if "RaceBot Admin" in str(interaction.user.roles):
+        modal = NewSotwModal("Create a new Seed of the Week")
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+        await command_functions.create_new_sotw(interaction, str(modal.sotwname), str(modal.sotwsubmitter),
+                                                str(modal.sotwseed))
+        await interaction.followup.send(f"New SotW is live! Check it out @ #seed-of-the-week!")
+    else:
+        await interaction.response.send_message(f"Only RaceBot Admins can use this command.", ephemeral=True)
 
 
 @sotw_group.command(name="refresh", description="Refresh the current SotW data")
 async def refresh_sotw(interaction: Interaction):
-    await interaction.response.defer()
-    await command_functions.refresh(interaction)
-    await interaction.followup.send("Data has been refreshed!")
+    if "RaceBot Admin" in str(interaction.user.roles):
+        await interaction.response.defer()
+        await command_functions.refresh(interaction)
+        await interaction.followup.send("Data has been refreshed!")
+    else:
+        await interaction.response.send_message(f"Only RaceBot Admins can use this command.", ephemeral=True)
 
 
 tree.add_command(sotw_group)

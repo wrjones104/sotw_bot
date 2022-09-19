@@ -71,7 +71,7 @@ async def enter_time(ctx, time):
         except:
             await ctx.response.send_message("Something is wrong with your time... try again", ephemeral=True)
             return None
-    if str(ctx.user) in sotw_db[str(len(sotw_db))]['runners']:
+    if str(ctx.user.name) in sotw_db[str(len(sotw_db))]['runners']:
         message = f"{ctx.user.name}, you already finished this race!"
     else:
         sotw_db[str(len(sotw_db))]['runners'][str(ctx.user.name)] = {"id": str(ctx.user.id), "finish_time": str(dt),

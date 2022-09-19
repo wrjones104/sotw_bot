@@ -19,6 +19,7 @@ class aclient(discord.Client):
 
     async def on_ready(self):
         await self.wait_until_ready()
+        tree.clear_commands(guild=None)
         if not self.synced:
             await tree.sync()
             self.synced = True

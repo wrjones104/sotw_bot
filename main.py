@@ -33,6 +33,11 @@ class NewSotwModal(Modal):
         style=TextStyle.short,
     )
 
+    sotwdesc = TextInput(
+        label="Enter a description for the seed",
+        style=TextStyle.paragraph,
+    )
+
     sotwsubmitter = TextInput(
         label="Who submitted this one?",
         style=TextStyle.short,
@@ -81,13 +86,15 @@ async def sotw_ff_command(interaction: Interaction):
 
 @sotw_group.command(name="new", description="Create a new Seed of the Week")
 async def sotw_new_command(interaction: Interaction):
+    role = get(interaction.guild.roles, name='SotW Ping')
+    channel = get(interaction.guild.channels, name='seed-of-the-week')
     if "Racebot Admin" in str(interaction.user.roles):
         modal = NewSotwModal("Create a new Seed of the Week")
         await interaction.response.send_modal(modal)
         await modal.wait()
         await command_functions.create_new_sotw(interaction, str(modal.sotwname), str(modal.sotwsubmitter),
-                                                str(modal.sotwseed))
-        await interaction.followup.send(f"New SotW is live! Check it out @ #seed-of-the-week!")
+                                                str(modal.sotwseed), str(modal.sotwdesc))
+        await interaction.followup.send(f"<@&{role.id}>: New SotW is live! Check it out @ <#{channel.id}>!")
     else:
         await interaction.response.send_message(f"Only Racebot Admins can use this command.", ephemeral=True)
 

@@ -8,7 +8,7 @@ from constants import discord_ids as ids
 from functions.string_functions import parse_done_time, sortdict
 
 
-async def create_new_sotw(ctx, name, submitter, seed):
+async def create_new_sotw(ctx, name, submitter, seed, description):
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: {seed}\n-----------------------------------'
@@ -35,7 +35,7 @@ async def create_new_sotw(ctx, name, submitter, seed):
         f"-----------------------------------\nHere begins the **{name}** Seed of the Week\n"
         f"-----------------------------------")
     sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed,
-                                 "creator": str(ctx.user.name),
+                                 "creator": str(ctx.user.name), "description": description,
                                  "create_date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                                  "header_msg_id": str(sotw_header.id), "leaderboard_header_id": str(leader_header.id),
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
@@ -125,7 +125,7 @@ async def refresh(ctx):
             updated_rankings_msg += f"\n{count}) {x['name']} - {x['time']}"
     updated_participants_msg = f"{len(sotw_db[str(len(sotw_db))]['runners'].values())} participants"
     updated_header_msg = f"-----------------------------------\n**{sotw_db[str(len(sotw_db))]['name']}** by: {sotw_db[str(len(sotw_db))]['submitter']}, rolled on" \
-                         f" {str(datetime.datetime.now().strftime('%b %d %Y'))}\n" \
+                         f" {' '.join(sotw_db[str(len(sotw_db))]['create_date'].split()[:3])}\n" \
                          f"Seed Link: {sotw_db[str(len(sotw_db))]['seed']}\n-----------------------------------"
     updated_spliiter_msg = f"-----------------------------------\nHere begins the **{sotw_db[str(len(sotw_db))]['name']}** Seed of the Week\n" \
         f"-----------------------------------"

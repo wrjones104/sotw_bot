@@ -12,7 +12,7 @@ from functions.string_functions import parse_done_time, sortdict
 async def create_new_sotw(ctx, name, submitter, seed, description):
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
-                     f'Seed Link: {seed}\n-----------------------------------'
+                     f'Seed Link: <{seed}>\n-----------------------------------'
     sotw_channel = get(ctx.guild.channels, name='seed-of-the-week')
     leaderboard_channel = get(ctx.guild.channels, name='sotw-leaderboards')
     spoiler_channel = get(ctx.guild.channels, name='sotw-spoilers')
@@ -52,7 +52,7 @@ async def create_new_sotw(ctx, name, submitter, seed, description):
             except:
                 print(f'Failed to remove role from {member}')
     try:
-        subprocess.check_call("gsutil cp projects/sotw_bot/sotw_db.json gs://seedbot", shell=True)
+        subprocess.check_call("gsutil cp sotw_db.json gs://seedbot", shell=True)
     except subprocess.CalledProcessError:
         pass
 

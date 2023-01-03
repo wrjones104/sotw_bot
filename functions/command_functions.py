@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import subprocess
 
 from discord.utils import get
 
@@ -50,6 +51,10 @@ async def create_new_sotw(ctx, name, submitter, seed, description):
                 await member.remove_roles(role)
             except:
                 print(f'Failed to remove role from {member}')
+    try:
+        subprocess.check_call("gsutil cp projects/sotw_bot/sotw_db.json gs://seedbot", shell=True)
+    except subprocess.CalledProcessError:
+        pass
 
 
 async def enter_time(ctx, time):

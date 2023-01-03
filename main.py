@@ -20,8 +20,8 @@ class aclient(discord.Client):
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:
-            # await tree.sync(guild=discord.Object(id=ids.ff6wc_guild))
             await tree.sync(guild=discord.Object(id=ids.ff6wc_guild))
+            # await tree.sync(guild=discord.Object(id=ids.jws_guild))
             await tree.sync(guild=None)
             self.synced = True
         print(f"We have logged in as {self.user}.")
@@ -108,7 +108,9 @@ async def refresh_sotw(interaction: Interaction):
     else:
         await interaction.response.send_message(f"Only Racebot Admins can use this command.", ephemeral=True)
 
+
 tree.add_command(sotw_group, guild=discord.Object(ids.ff6wc_guild))
+# tree.add_command(sotw_group, guild=discord.Object(ids.jws_guild))
 tree.clear_commands(guild=None)
 
 client.run(os.getenv('discord_token'))

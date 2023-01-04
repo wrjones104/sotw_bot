@@ -3,16 +3,43 @@ import json
 import os
 import subprocess
 
+import requests
 from discord.utils import get
 
-from constants import discord_ids as ids
 from functions.string_functions import parse_done_time, sortdict
 
 
-async def create_new_sotw(ctx, name, submitter, seed, description):
+async def generate_seed(flags, seed_desc, ctx):
+    # url = "https://dev.ff6worldscollide.com/api/seed"
+    url = "https://ff6worldscollide.com/api/seed"
+    payload = json.dumps({
+        # "key": "jones",
+        "key": os.getenv("new_api_key"),
+        "flags": flags,
+        "description": seed_desc
+    })
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    response = requests.request("POST", url, headers=headers, data=payload)
+    data = response.json()
+    print(data)
+    if 'url' not in data:
+        await ctx.user.send('The randomizer didn\'t like your flags... try again!')
+        raise KeyError(f'API returned {data} for the following flagstring:\n```{flags}```')
+    return data
+
+
+async def create_new_sotw(ctx, name, submitter, flags, description):
+    try:
+        seed = await generate_seed(flags, description, ctx)
+        seed_link = seed['url']
+    except TypeError:
+        raise
+    home = os.getcwd()
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
-                     f'Seed Link: <{seed}>\n-----------------------------------'
+                     f'Seed Link: <{seed_link}>\n-----------------------------------'
     sotw_channel = get(ctx.guild.channels, name='seed-of-the-week')
     leaderboard_channel = get(ctx.guild.channels, name='sotw-leaderboards')
     spoiler_channel = get(ctx.guild.channels, name='sotw-spoilers')
@@ -35,8 +62,8 @@ async def create_new_sotw(ctx, name, submitter, seed, description):
     spoiler_splitter = await spoiler_channel.send(
         f"-----------------------------------\nHere begins the **{name}** Seed of the Week\n"
         f"-----------------------------------")
-    sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed,
-                                 "creator": str(ctx.user.name), "description": description,
+    sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link,
+                                 "creator": str(ctx.user.name), "description": description, "seed_id": seed['seed_id'],
                                  "create_date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                                  "header_msg_id": str(sotw_header.id), "leaderboard_header_id": str(leader_header.id),
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
@@ -51,14 +78,26 @@ async def create_new_sotw(ctx, name, submitter, seed, description):
                 await member.remove_roles(role)
             except:
                 print(f'Failed to remove role from {member}')
+
+    # Here, we force push the sotw_db.json file out to the Google Cloud bucket.
+    # This allows the website to pull updated SotW data immediately.
     try:
         subprocess.check_call("gsutil cp sotw_db.json gs://seedbot", shell=True)
     except subprocess.CalledProcessError:
         pass
 
+    # This next bit of code updates the SotW SeedBot preset.
+    os.chdir('../seedbot2000/db')
+    with open('user_presets.json') as x:
+        preset_dict = json.load(x)
+        preset_dict['sotw']['flags'] = seed['flags']
+        with open('user_presets.json', 'w') as updatefile:
+            updatefile.write(json.dumps(preset_dict))
+    os.chdir(home)
+
 
 async def enter_time(ctx, time):
-    if time == "Forfeit":
+    if time.casefold() in ("forfeit", "ff"):
         ff = True
     else:
         ff = False
@@ -133,7 +172,7 @@ async def refresh(ctx):
                          f" {' '.join(sotw_db[str(len(sotw_db))]['create_date'].split()[:3])}\n" \
                          f"Seed Link: {sotw_db[str(len(sotw_db))]['seed']}\n-----------------------------------"
     updated_spliiter_msg = f"-----------------------------------\nHere begins the **{sotw_db[str(len(sotw_db))]['name']}** Seed of the Week\n" \
-        f"-----------------------------------"
+                           f"-----------------------------------"
     await rankings.edit(content=updated_rankings_msg)
     await participants.edit(content=updated_participants_msg)
     await leader_header.edit(content=updated_header_msg)

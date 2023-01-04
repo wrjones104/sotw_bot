@@ -1,9 +1,9 @@
 import os
 
 import discord
-from discord.utils import get
 from discord import app_commands, Interaction, TextStyle
 from discord.ui import Modal, TextInput
+from discord.utils import get
 from dotenv import load_dotenv
 
 import constants.discord_ids as ids
@@ -43,9 +43,9 @@ class NewSotwModal(Modal):
         style=TextStyle.short,
     )
 
-    sotwseed = TextInput(
-        label="What's the seed link?",
-        style=TextStyle.short,
+    sotwflags = TextInput(
+        label="Enter the flags",
+        style=TextStyle.paragraph,
     )
 
     def __init__(self, title: str) -> None:
@@ -93,8 +93,14 @@ async def sotw_new_command(interaction: Interaction):
         await interaction.response.send_modal(modal)
         await modal.wait()
         await command_functions.create_new_sotw(interaction, str(modal.sotwname), str(modal.sotwsubmitter),
-                                                str(modal.sotwseed), str(modal.sotwdesc))
-        await interaction.followup.send(f"<@&{role.id}>: New SotW is live! Check it out @ <#{channel.id}>!")
+                                                str(modal.sotwflags), str(modal.sotwdesc))
+        try:
+            await interaction.followup.send(
+            f"<@&{role.id}>: New SotW is live, courtesy of **{str(modal.sotwsubmitter)}**! Check it out @ <#{channel.id}>! And don't "
+            f"forget to submit your own ideas for SotW here: "
+            f"<https://forms.gle/99rEUH7MMaifdhkH6>")
+        except TypeError:
+            return await interaction.channel.send("wut")
     else:
         await interaction.response.send_message(f"Only Racebot Admins can use this command.", ephemeral=True)
 

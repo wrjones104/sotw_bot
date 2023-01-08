@@ -88,6 +88,7 @@ async def sotw_ff_command(interaction: Interaction):
 async def sotw_new_command(interaction: Interaction):
     role = get(interaction.guild.roles, name='SotW Ping')
     channel = get(interaction.guild.channels, name='seed-of-the-week')
+    general_channel = get(interaction.guild.channels, name='ff6wc-general-chat')
     if "Racebot Admin" in str(interaction.user.roles):
         modal = NewSotwModal("Create a new Seed of the Week")
         await interaction.response.send_modal(modal)
@@ -95,10 +96,15 @@ async def sotw_new_command(interaction: Interaction):
         await command_functions.create_new_sotw(interaction, str(modal.sotwname), str(modal.sotwsubmitter),
                                                 str(modal.sotwflags), str(modal.sotwdesc))
         try:
+            await general_channel.send(
+                f"<@&{role.id}>: New SotW is live, courtesy of **{str(modal.sotwsubmitter)}**! Check it out @ <#{channel.id}>! And don't "
+                f"forget to submit your own ideas for SotW here: "
+                f"<https://forms.gle/99rEUH7MMaifdhkH6>")
+        except AttributeError:
             await interaction.followup.send(
-            f"<@&{role.id}>: New SotW is live, courtesy of **{str(modal.sotwsubmitter)}**! Check it out @ <#{channel.id}>! And don't "
-            f"forget to submit your own ideas for SotW here: "
-            f"<https://forms.gle/99rEUH7MMaifdhkH6>")
+                f"<@&{role.id}>: New SotW is live, courtesy of **{str(modal.sotwsubmitter)}**! Check it out @ <#{channel.id}>! And don't "
+                f"forget to submit your own ideas for SotW here: "
+                f"<https://forms.gle/99rEUH7MMaifdhkH6>")
         except TypeError:
             return await interaction.channel.send("wut")
     else:

@@ -26,7 +26,7 @@ async def generate_seed(flags, seed_desc, ctx):
     print(data)
     if 'url' not in data:
         await ctx.user.send('The randomizer didn\'t like your flags... try again!')
-        raise KeyError(f'API returned {data} for the following flagstring:\n```{flags}```')
+        raise KeyError(f'API returned {data} for the following flagstring:{flags}')
     return data
 
 

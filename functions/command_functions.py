@@ -2,11 +2,10 @@ import datetime
 import json
 import os
 import subprocess
-from dotenv import load_dotenv
-
 
 import requests
 from discord.utils import get
+from dotenv import load_dotenv
 
 from functions.string_functions import parse_done_time, sortdict
 
@@ -95,7 +94,8 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
     with open('user_presets.json') as x:
         preset_dict = json.load(x)
         preset_dict['sotw']['flags'] = seed['flags']
-        preset_dict['sotw']['description'] = f"Practice for this week's SotW: **{name}**\n```{description}```"
+        preset_dict['sotw'][
+            'description'] = f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
         with open('user_presets.json', 'w') as updatefile:
             updatefile.write(json.dumps(preset_dict))
     os.chdir(home)

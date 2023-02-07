@@ -6,6 +6,7 @@ from discord.ui import Modal, TextInput
 from discord.utils import get
 from dotenv import load_dotenv
 
+import views as views
 from functions import command_functions
 
 load_dotenv()
@@ -16,6 +17,9 @@ class aclient(discord.Client):
         super().__init__(intents=discord.Intents.all())
         self.synced = False
 
+    async def setup_hook(self) -> None:
+        self.add_view(views.SotwPingView())
+
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:
@@ -23,7 +27,6 @@ class aclient(discord.Client):
             await tree.sync(guild=None)
             self.synced = True
         print(f"We have logged in as {self.user}.")
-
 
 
 class NewSotwModal(Modal):
@@ -71,6 +74,9 @@ async def on_message(message):
     except AttributeError:
         pass
 
+    if message.content.startswith("!test"):
+        await command_functions.get_flags('vvwir92chg72')
+
 
 @sotw_group.command(name="done", description="Enter your time for the Seed of the Week")
 @app_commands.describe(time='Enter your time in 01:23:45 format')
@@ -95,10 +101,11 @@ async def sotw_new_command(interaction: Interaction):
         await command_functions.create_new_sotw(interaction, str(modal.sotwname), str(modal.sotwsubmitter),
                                                 str(modal.sotwflags), str(modal.sotwdesc))
         try:
+            sotwview = views.SotwPingView()
+            sotwview.add_item(discord.ui.Button(label="Submit Idea!", style=discord.ButtonStyle.link, emoji="💡", url="https://forms.gle/99rEUH7MMaifdhkH6"))
             await general_channel.send(
-                f"<@&{role.id}>: New SotW is live, courtesy of **{str(modal.sotwsubmitter)}**! Check it out @ <#{channel.id}>! And don't "
-                f"forget to submit your own ideas for SotW here: "
-                f"<https://forms.gle/99rEUH7MMaifdhkH6>")
+                f"<@&{role.id}>: A new SotW is live! **{str(modal.sotwname)}**, crafted by **{str(modal.sotwsubmitter)}**!\n```{str(modal.sotwdesc)}```Check it out @ <#{channel.id}>! And don't "
+                f"forget to submit your own ideas for the Seed of the Week!", view=sotwview)
         except AttributeError:
             await interaction.followup.send(
                 f"<@&{role.id}>: New SotW is live, courtesy of **{str(modal.sotwsubmitter)}**! Check it out @ <#{channel.id}>! And don't "

@@ -7,9 +7,20 @@ import requests
 from discord.utils import get
 from dotenv import load_dotenv
 
+import views
 from functions.string_functions import parse_done_time, sortdict
 
 load_dotenv()
+
+
+async def get_flags(seed):
+    url = os.getenv('url') + f'/{os.getenv("new_api_key")}/{seed}'
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    response = requests.request("GET", url, headers=headers)
+    data = response.json()
+    return data['data']['flags']
 
 
 async def generate_seed(flags, seed_desc, ctx):

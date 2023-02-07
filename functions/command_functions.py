@@ -95,6 +95,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
     with open('user_presets.json') as x:
         preset_dict = json.load(x)
         preset_dict['sotw']['flags'] = seed['flags']
+        preset_dict['sotw']['description'] = f"Practice for this week's SotW: **{name}**\n```{description}```"
         with open('user_presets.json', 'w') as updatefile:
             updatefile.write(json.dumps(preset_dict))
     os.chdir(home)

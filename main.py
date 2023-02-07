@@ -25,6 +25,7 @@ class aclient(discord.Client):
         print(f"We have logged in as {self.user}.")
 
 
+
 class NewSotwModal(Modal):
     sotwname = TextInput(
         label="Enter the name for the Seed of the Week",
@@ -67,6 +68,9 @@ async def on_message(message):
             await message.author.send(f"The #{sotw_channel} channel only accepts the slash commands `/sotw done` or "
                                       f"`/sotw forfeit`.")
             await message.delete()
+        elif message.content.startswith("!test") and message.author.id == 197757429948219392:
+            role = get(message.guild.roles, name='SotW Ping')
+            await message.channel.send(f"<@&{role.id}>")
     except AttributeError:
         pass
 

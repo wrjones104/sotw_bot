@@ -14,8 +14,8 @@ class SotwPingView(View):
     @discord.ui.button(label="Practice", style=discord.ButtonStyle.green, emoji="🎲",
                        custom_id="practice_button")
     async def practice(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(f'One moment please...', ephemeral=True)
         try:
-            await interaction.response.defer()
             with open("sotw_db.json") as x:
                 sotw_db = json.load(x)
                 flags = await get_flags(sotw_db[str(len(sotw_db))]['seed_id'])

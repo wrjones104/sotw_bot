@@ -177,7 +177,7 @@ tree.clear_commands(guild=None)
 async def check_time():
     current_time = datetime.datetime.now().strftime("%A, %H")
 
-    if current_time == 'Sunday, 00':
+    if current_time == 'Sunday, 0':
         data = await command_functions.auto_create_new_sotw(client)
         sotwview = views.SotwPingView()
         general_channel = data[0]

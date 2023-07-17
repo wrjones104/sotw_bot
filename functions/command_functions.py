@@ -139,7 +139,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
 
 async def auto_create_new_sotw(ctx):
     print(f'{datetime.datetime.now()}: Starting auto-roll workflow.')
-    sotw_guild = await ctx.fetch_guild(constants.guild)
+    sotw_guild = ctx.get_guild(constants.guild)
     sotw_channel = get(ctx.get_all_channels(), guild__id=constants.guild, name="seed-of-the-week")
     leaderboard_channel = get(ctx.get_all_channels(), guild__id=constants.guild, name="sotw-leaderboards")
     spoiler_channel = get(ctx.get_all_channels(), guild__id=constants.guild, name="sotw-spoilers")
@@ -150,16 +150,16 @@ async def auto_create_new_sotw(ctx):
     with open('settings.json') as x:
         settings = json.load(x)
     if not settings:
-        return print('No settings options found - shutting down auto-roll workflow')
+        return print(f'{datetime.datetime.now()}: No settings options found - shutting down auto-roll workflow')
     elif settings['auto-mode'] == "False":
-        return print('Auto-mode set to FALSE - shutting down auto-roll workflow')
+        return print(f'{datetime.datetime.now()}: Auto-mode set to FALSE - shutting down auto-roll workflow')
     error_check = True
     badflags = ['']
     while error_check:
         this_week = await get_possible_seeds(badflags)
         if not this_week:
-            print("No vetted flagsets to choose from - proceeding with reserves.")
-            chaotic = random.choice([True, False])
+            print(f"{datetime.datetime.now()}: Proceeding with reserves...")
+            chaotic = random.choices([True, False], weights=[1, 10], k=1)
             if chaotic:
                 flags = chaos()
                 description = f"There weren't any submissions for me to roll, so now you must face the CHAOS!"
@@ -184,7 +184,7 @@ async def auto_create_new_sotw(ctx):
             seed_link = seed['url']
             error_check = False
         except KeyError:
-            print(f'{datetime.datetime.now()}: There was a flag error with this seed: {name} from {submitter}')
+            print(f'{datetime.datetime.now()}: There was a flag error with this submission: {name} from {submitter}')
             badflags.append(flags)
     home = os.getcwd()
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
@@ -228,7 +228,7 @@ async def auto_create_new_sotw(ctx):
             try:
                 await member.remove_roles(role)
             except:
-                print(f'Failed to remove role from {member}')
+                print(f'{datetime.datetime.now()}: Failed to remove role from {member}')
     role = get(sotw_guild.roles, name='SotW Ping')
 
     # Here, we force push the sotw_db.json file out to the Google Cloud bucket.
@@ -339,6 +339,7 @@ async def refresh(ctx):
 
 
 async def new_submission(ctx):
+    # TODO: Add profanity filter
     modal = NewSubModal("Submit your idea for SotW!")
     await ctx.response.send_modal(modal)
     await modal.wait()
@@ -374,7 +375,7 @@ async def new_reserve_choice(ctx):
 
 async def write_new_submission(ctx, name, flags, desc, link):
     gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
-    sh = gc.open('SotW Submissions')
+    sh = gc.open(constants.sheetname)
     wks = sh[0]
 
     cells = wks.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=False, returnas='matrix')
@@ -401,7 +402,7 @@ async def write_new_reserve(ctx, name, flags, desc):
 
 async def get_possible_seeds(badflags):
     gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
-    sh = gc.open('SotW Submissions')
+    sh = gc.open(constants.sheetname)
     wks = sh[0]
     wks2 = sh[1]
 
@@ -414,13 +415,14 @@ async def get_possible_seeds(badflags):
         last_submitter = "Null"
     random_select = []
     try:
+        print(f'{datetime.datetime.now()}: Getting possible flagsets')
         for n, x in enumerate(cells[1:]):
             if x[6]:
-                print(x[1])
                 if x[1] == last_submitter or x[4] in badflags:
                     pass
                 else:
                     random_select.append([x, n + 2])
+        print(f'{datetime.datetime.now()}: {len(random_select)} possible flagsets found!')
         return random.choice(random_select)
     except IndexError:
         return
@@ -428,7 +430,7 @@ async def get_possible_seeds(badflags):
 
 async def move_tabs(ctx, create_date, submitter, name, description, flags, seed_link, del_row):
     gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
-    sh = gc.open('SotW Submissions')
+    sh = gc.open(constants.sheetname)
     wks = sh[0]
     wks2 = sh[1]
 

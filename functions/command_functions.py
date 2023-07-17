@@ -339,7 +339,6 @@ async def refresh(ctx):
 
 
 async def new_submission(ctx):
-    # TODO: Add profanity filter
     modal = NewSubModal("Submit your idea for SotW!")
     await ctx.response.send_modal(modal)
     await modal.wait()

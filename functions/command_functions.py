@@ -159,11 +159,12 @@ async def auto_create_new_sotw(ctx):
         this_week = await get_possible_seeds(badflags)
         if not this_week:
             print(f"{datetime.datetime.now()}: Proceeding with reserves...")
-            chaotic = random.choices([True, False], weights=[1, 10], k=1)
-            if chaotic:
+            chaotic = random.choices([True, False], weights=[1, 9], k=1)
+            print(f"Chaos toggle: {chaotic[0]}")
+            if chaotic[0]:
                 flags = chaos()
                 description = f"There weren't any submissions for me to roll, so now you must face the CHAOS!"
-                name = f"Chaos Reigns"
+                name = f"Chaos {random.choice(['Ensues', 'Reigns', 'Rains Down', 'Upon Ye Mortals', 'is Lyfe', 'Eternal', 'Infinite'])}"
             else:
                 with open('db/reserves.json') as r:
                     reserves = json.load(r)
@@ -408,8 +409,10 @@ async def get_possible_seeds(badflags):
     cells = wks.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=True, returnas='matrix')
     cells2 = wks2.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=False, returnas='matrix')
     lastrow = len(cells2)
+    last_submitter = []
     try:
-        last_submitter = cells2[lastrow - 1][1]
+        last_submitter.append(cells2[lastrow - 1][1])
+        last_submitter.append(cells2[lastrow - 2][1])
     except:
         last_submitter = "Null"
     random_select = []
@@ -417,7 +420,7 @@ async def get_possible_seeds(badflags):
         print(f'{datetime.datetime.now()}: Getting possible flagsets')
         for n, x in enumerate(cells[1:]):
             if x[6]:
-                if x[1] == last_submitter or x[4] in badflags:
+                if x[1] in last_submitter or x[4] in badflags:
                     pass
                 else:
                     random_select.append([x, n + 2])

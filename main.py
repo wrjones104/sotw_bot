@@ -63,16 +63,18 @@ class NewSotwModal(Modal):
 client = aclient()
 tree = app_commands.CommandTree(client)
 
-sotw_group = app_commands.Group(name='sotw', description="Seed of the Week Commands")
+sotw_group = app_commands.Group(name="sotw", description="Seed of the Week Commands")
 
 
 @client.event
 async def on_message(message):
     try:
-        sotw_channel = get(message.guild.channels, name='seed-of-the-week')
+        sotw_channel = get(message.guild.channels, name="seed-of-the-week")
         if message.channel == sotw_channel:
-            await message.author.send(f"The #{sotw_channel} channel only accepts the slash commands `/sotw done` or "
-                                      f"`/sotw forfeit`.")
+            await message.author.send(
+                f"The #{sotw_channel} channel only accepts the slash commands `/sotw done` or "
+                f"`/sotw forfeit`."
+            )
             await message.delete()
     except AttributeError:
         pass
@@ -81,11 +83,13 @@ async def on_message(message):
         if message.author.id == 197757429948219392:
             await command_functions.auto_create_new_sotw(client)
         else:
-            await message.channel.send("Sorry, only Jones can use the `!test` command. GET REKT DIRTBAG!")
+            await message.channel.send(
+                "Sorry, only Jones can use the `!test` command. GET REKT DIRTBAG!"
+            )
 
 
 @sotw_group.command(name="done", description="Enter your time for the Seed of the Week")
-@app_commands.describe(time='Enter your time in 01:23:45 format')
+@app_commands.describe(time="Enter your time in 01:23:45 format")
 async def sotw_done_command(interaction: Interaction, time: str):
     await command_functions.enter_time(interaction, time)
 
@@ -95,7 +99,9 @@ async def sotw_ff_command(interaction: Interaction):
     await command_functions.enter_time(interaction, "Forfeit")
 
 
-@sotw_group.command(name="submit", description="Get creative and submit your idea for SotW!")
+@sotw_group.command(
+    name="submit", description="Get creative and submit your idea for SotW!"
+)
 async def sotw_new_submission(interaction: Interaction):
     await command_functions.new_submission(interaction)
 
@@ -106,45 +112,58 @@ async def sotw_new_reserve(interaction: Interaction):
 
 
 @sotw_group.command(name="review", description="See a list of all submitted SotW ideas")
-async def sotw_new_reserve(interaction: Interaction):
-    await interaction.response.send_message('<http://seedbot.net/sotw-submissions>', ephemeral=True)
+async def sotw_review(interaction: Interaction):
+    await interaction.response.send_message(
+        "<http://seedbot.net/sotw-submissions>", ephemeral=True
+    )
 
 
 @sotw_group.command(name="new", description="Create a new Seed of the Week")
 async def sotw_new_command(interaction: Interaction):
-    if not os.path.exists('settings.json'):
-        with open('settings.json', 'w') as newfile:
+    if not os.path.exists("settings.json"):
+        with open("settings.json", "w") as newfile:
             newfile.write(json.dumps({}))
-    with open('settings.json') as x:
+    with open("settings.json") as x:
         settings = json.load(x)
-    if settings['auto-mode'] == "True":
+    if settings["auto-mode"] == "True":
         await interaction.response.send_message(
-            f"I am set to auto-roll right now. Please use the `/sotw auto` command to change that if you need to.",
-            ephemeral=True)
+            "I am set to auto-roll right now. Please use the `/sotw auto` command to change that if you need to.",
+            ephemeral=True,
+        )
     else:
-        role = get(interaction.guild.roles, name='SotW Ping')
-        channel = get(interaction.guild.channels, name='seed-of-the-week')
-        general_channel = get(interaction.guild.channels, name='ff6wc-general-chat')
+        role = get(interaction.guild.roles, name="SotW Ping")
+        channel = get(interaction.guild.channels, name="seed-of-the-week")
+        general_channel = get(interaction.guild.channels, name="ff6wc-general-chat")
         if "Racebot Admin" in str(interaction.user.roles):
             modal = NewSotwModal("Create a new Seed of the Week")
             await interaction.response.send_modal(modal)
             await modal.wait()
-            await command_functions.create_new_sotw(interaction, str(modal.sotwname), str(modal.sotwsubmitter),
-                                                    str(modal.sotwflags), str(modal.sotwdesc))
+            await command_functions.create_new_sotw(
+                interaction,
+                str(modal.sotwname),
+                str(modal.sotwsubmitter),
+                str(modal.sotwflags),
+                str(modal.sotwdesc),
+            )
             try:
                 sotwview = views.SotwPingView()
                 await general_channel.send(
                     f"<@&{role.id}>: A new SotW is live! **{str(modal.sotwname)}**, crafted by **{str(modal.sotwsubmitter)}**!\n```{str(modal.sotwdesc)}```Check it out @ <#{channel.id}>! And don't "
-                    f"forget to submit your own ideas for the Seed of the Week!", view=sotwview)
+                    f"forget to submit your own ideas for the Seed of the Week!",
+                    view=sotwview,
+                )
             except AttributeError:
                 await interaction.followup.send(
                     f"<@&{role.id}>: New SotW is live, courtesy of **{str(modal.sotwsubmitter)}**! Check it out @ <#{channel.id}>! And don't "
                     f"forget to submit your own ideas for SotW here: "
-                    f"<https://forms.gle/99rEUH7MMaifdhkH6>")
+                    f"<https://forms.gle/99rEUH7MMaifdhkH6>"
+                )
             except TypeError:
                 return await interaction.channel.send("wut")
         else:
-            await interaction.response.send_message(f"Only Racebot Admins can use this command.", ephemeral=True)
+            await interaction.response.send_message(
+                "Only Racebot Admins can use this command.", ephemeral=True
+            )
 
 
 @sotw_group.command(name="refresh", description="Refresh the current SotW data")
@@ -154,19 +173,27 @@ async def refresh_sotw(interaction: Interaction):
         await command_functions.refresh(interaction)
         await interaction.followup.send("Data has been refreshed!")
     else:
-        await interaction.response.send_message(f"Only Racebot Admins can use this command.", ephemeral=True)
+        await interaction.response.send_message(
+            "Only Racebot Admins can use this command.", ephemeral=True
+        )
 
 
 @sotw_group.command(name="auto", description="Set the Auto Mode")
 @app_commands.choices(
-    choice=[app_commands.Choice(name='True', value='True'), app_commands.Choice(name='False', value="False")])
+    choice=[
+        app_commands.Choice(name="True", value="True"),
+        app_commands.Choice(name="False", value="False"),
+    ]
+)
 async def sotw_auto_command(interaction: Interaction, choice: app_commands.Choice[str]):
     if "Racebot Admin" in str(interaction.user.roles):
         await interaction.response.defer()
         await command_functions.auto_mode(interaction, str(choice.value))
         await interaction.followup.send(f"Auto-Mode set to `{choice.value}`!")
     else:
-        await interaction.response.send_message(f"Only Racebot Admins can use this command.", ephemeral=True)
+        await interaction.response.send_message(
+            "Only Racebot Admins can use this command.", ephemeral=True
+        )
 
 
 tree.add_command(sotw_group, guild=discord.Object(constants.guild))
@@ -177,7 +204,7 @@ tree.clear_commands(guild=None)
 async def check_time():
     current_time = datetime.datetime.now().strftime("%A, %H")
 
-    if current_time == 'Sunday, 00':
+    if current_time == "Sunday, 00":
         data = await command_functions.auto_create_new_sotw(client)
         sotwview = views.SotwPingView()
         general_channel = data[0]
@@ -189,7 +216,9 @@ async def check_time():
         await general_channel.send(
             f"<@&{role.id}>: A new SotW is live! **{name}**, crafted by **{submitter}**!\n```{description}```"
             f"Check it out @ <#{sotw_channel.id}>! And don't "
-            f"forget to submit your own ideas for the Seed of the Week!", view=sotwview)
+            f"forget to submit your own ideas for the Seed of the Week!",
+            view=sotwview,
+        )
     else:
         pass
 

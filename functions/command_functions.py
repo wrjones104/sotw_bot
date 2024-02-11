@@ -3,6 +3,7 @@ import json
 import os
 import random
 import subprocess
+import sqlite3
 
 import pygsheets
 import requests
@@ -73,7 +74,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         seed_link = seed['url']
     except TypeError:
         raise
-    home = os.getcwd()
+    # home = os.getcwd()
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: <{seed_link}>\n' \
@@ -91,7 +92,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         participants = await sotw_channel.fetch_message(sotw_db[str(len(sotw_db))]['participants_msg_id'])
         rankings = await leaderboard_channel.fetch_message(sotw_db[str(len(sotw_db))]['rankings_msg_id'])
         await participants.edit(content=rankings.content)
-    except:
+    except Exception:
         pass
     await leaderboard_channel.purge()
     leader_header = await leaderboard_channel.send(message_header)
@@ -115,7 +116,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         if role in member.roles:
             try:
                 await member.remove_roles(role)
-            except:
+            except Exception:
                 print(f'Failed to remove role from {member}')
 
     # Here, we force push the sotw_db.json file out to the Google Cloud bucket.
@@ -126,15 +127,23 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    os.chdir('../seedbot2000/db')
-    with open('user_presets.json') as x:
-        preset_dict = json.load(x)
-        preset_dict['sotw']['flags'] = seed['flags']
-        preset_dict['sotw'][
-            'description'] = f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
-        with open('user_presets.json', 'w') as updatefile:
-            updatefile.write(json.dumps(preset_dict))
-    os.chdir(home)
+    # os.chdir('../seedbot2000/db')
+    # with open('user_presets.json') as x:
+    #     preset_dict = json.load(x)
+    #     preset_dict['sotw']['flags'] = seed['flags']
+    #     preset_dict['sotw'][
+    #         'description'] = f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
+    #     with open('user_presets.json', 'w') as updatefile:
+    #         updatefile.write(json.dumps(preset_dict))
+    # os.chdir(home)
+    con = await sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
+    cur = con.cursor()
+    cur.execute(
+        "UPDATE presets SET flags = (?), description = (?) WHERE preset_name = (?)", (flags, f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```", 'SotW')
+    )
+    con.commit()
+    con.close()
+
 
 
 async def auto_create_new_sotw(ctx):
@@ -163,7 +172,7 @@ async def auto_create_new_sotw(ctx):
             print(f"Chaos toggle: {chaotic[0]}")
             if chaotic[0]:
                 flags = chaos()
-                description = f"There weren't any submissions for me to roll, so now you must face the CHAOS!"
+                description = "There weren't any submissions for me to roll, so now you must face the CHAOS!"
                 name = f"Chaos {random.choice(['Ensues', 'Reigns', 'Rains Down', 'Upon Ye Mortals', 'is Lyfe', 'Eternal', 'Infinite'])}"
             else:
                 with open('db/reserves.json') as r:
@@ -202,7 +211,7 @@ async def auto_create_new_sotw(ctx):
         participants = await sotw_channel.fetch_message(sotw_db[str(len(sotw_db))]['participants_msg_id'])
         rankings = await leaderboard_channel.fetch_message(sotw_db[str(len(sotw_db))]['rankings_msg_id'])
         await participants.edit(content=rankings.content)
-    except:
+    except Exception:
         pass
     await leaderboard_channel.purge()
     leader_header = await leaderboard_channel.send(message_header)
@@ -228,7 +237,7 @@ async def auto_create_new_sotw(ctx):
         if role in member.roles:
             try:
                 await member.remove_roles(role)
-            except:
+            except Exception:
                 print(f'{datetime.datetime.now()}: Failed to remove role from {member}')
     role = get(sotw_guild.roles, name='SotW Ping')
 
@@ -240,15 +249,22 @@ async def auto_create_new_sotw(ctx):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    os.chdir('../seedbot2000/db')
-    with open('user_presets.json') as x:
-        preset_dict = json.load(x)
-        preset_dict['sotw']['flags'] = seed['flags']
-        preset_dict['sotw'][
-            'description'] = f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
-        with open('user_presets.json', 'w') as updatefile:
-            updatefile.write(json.dumps(preset_dict))
-    os.chdir(home)
+    # os.chdir('../seedbot2000/db')
+    # with open('user_presets.json') as x:
+    #     preset_dict = json.load(x)
+    #     preset_dict['sotw']['flags'] = seed['flags']
+    #     preset_dict['sotw'][
+    #         'description'] = f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
+    #     with open('user_presets.json', 'w') as updatefile:
+    #         updatefile.write(json.dumps(preset_dict))
+    # os.chdir(home)
+    con = await sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
+    cur = con.cursor()
+    cur.execute(
+        "UPDATE presets SET flags = (?), description = (?) WHERE preset_name = (?)", (flags, f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```", 'SotW')
+    )
+    con.commit()
+    con.close()
 
     return general_channel, name, submitter, description, sotw_channel, role
 
@@ -269,7 +285,7 @@ async def enter_time(ctx, time):
     else:
         try:
             dt = parse_done_time(time)
-        except:
+        except Exception:
             await ctx.response.send_message("Something is wrong with your time... try again", ephemeral=True)
             return None
     if str(ctx.user.name) in sotw_db[str(len(sotw_db))]['runners']:
@@ -281,7 +297,7 @@ async def enter_time(ctx, time):
         if not ff:
             message = f"Great job {ctx.user.name}, you finished in {str(dt)}!"
         else:
-            message = f"Better luck next time!"
+            message = "Better luck next time!"
         updated_rankings_msg = ""
         runner_list = []
         count = 0
@@ -413,7 +429,7 @@ async def get_possible_seeds(badflags):
     try:
         last_submitter.append(cells2[lastrow - 1][1])
         last_submitter.append(cells2[lastrow - 2][1])
-    except:
+    except Exception:
         last_submitter = "Null"
     random_select = []
     try:

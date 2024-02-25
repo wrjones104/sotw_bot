@@ -136,7 +136,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
     #     with open('user_presets.json', 'w') as updatefile:
     #         updatefile.write(json.dumps(preset_dict))
     # os.chdir(home)
-    con = await sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
+    con = sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
     cur = con.cursor()
     cur.execute(
         "UPDATE presets SET flags = (?), description = (?) WHERE preset_name = (?)", (flags, f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```", 'SotW')
@@ -258,7 +258,7 @@ async def auto_create_new_sotw(ctx):
     #     with open('user_presets.json', 'w') as updatefile:
     #         updatefile.write(json.dumps(preset_dict))
     # os.chdir(home)
-    con = await sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
+    con = sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
     cur = con.cursor()
     cur.execute(
         "UPDATE presets SET flags = (?), description = (?) WHERE preset_name = (?)", (flags, f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```", 'SotW')

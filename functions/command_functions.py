@@ -196,7 +196,6 @@ async def auto_create_new_sotw(ctx):
         except KeyError:
             print(f'{datetime.datetime.now()}: There was a flag error with this submission: {name} from {submitter}')
             badflags.append(flags)
-    home = os.getcwd()
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: <{seed_link}>\n' \
@@ -420,26 +419,14 @@ async def get_possible_seeds(badflags):
     gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
     sh = gc.open(constants.sheetname)
     wks = sh[0]
-    wks2 = sh[1]
 
     cells = wks.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=True, returnas='matrix')
-    cells2 = wks2.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=False, returnas='matrix')
-    lastrow = len(cells2)
-    last_submitter = []
-    try:
-        last_submitter.append(cells2[lastrow - 1][1])
-        last_submitter.append(cells2[lastrow - 2][1])
-    except Exception:
-        last_submitter = "Null"
     random_select = []
     try:
         print(f'{datetime.datetime.now()}: Getting possible flagsets')
         for n, x in enumerate(cells[1:]):
             if x[6]:
-                if x[1] in last_submitter or x[4] in badflags:
-                    pass
-                else:
-                    random_select.append([x, n + 2])
+                random_select.append([x, n + 2])
         print(f'{datetime.datetime.now()}: {len(random_select)} possible flagsets found!')
         return random.choice(random_select)
     except IndexError:

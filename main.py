@@ -111,6 +111,12 @@ async def sotw_new_reserve(interaction: Interaction):
     await command_functions.new_reserve_choice(interaction)
 
 
+@sotw_group.command(name="force", description="Force the bot to roll a new SotW")
+async def sotw_force_new(interaction: Interaction):
+    await interaction.response.send_message("Forcing a new SotW - stand by...", ephemeral=True)
+    await command_functions.auto_create_new_sotw(client)
+
+
 @sotw_group.command(name="review", description="See a list of all submitted SotW ideas")
 async def sotw_review(interaction: Interaction):
     await interaction.response.send_message(

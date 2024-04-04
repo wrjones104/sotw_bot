@@ -113,8 +113,13 @@ async def sotw_new_reserve(interaction: Interaction):
 
 @sotw_group.command(name="force", description="Force the bot to roll a new SotW")
 async def sotw_force_new(interaction: Interaction):
-    await interaction.response.send_message("Forcing a new SotW - stand by...", ephemeral=True)
-    await command_functions.auto_create_new_sotw(client)
+    if "Racebot Admin" in str(interaction.user.roles):
+        await interaction.response.send_message("Forcing a new SotW - stand by...", ephemeral=True)
+        await command_functions.auto_create_new_sotw(client)
+    else:
+        await interaction.response.send_message(
+            "Only Racebot Admins can use this command.", ephemeral=True
+        )
 
 
 @sotw_group.command(name="review", description="See a list of all submitted SotW ideas")

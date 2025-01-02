@@ -216,20 +216,21 @@ async def check_time():
     current_time = datetime.datetime.now().strftime("%A, %H")
 
     if current_time == "Sunday, 00":
-        data = await command_functions.auto_create_new_sotw(client)
-        sotwview = views.SotwPingView()
-        general_channel = data[0]
-        name = data[1]
-        submitter = data[2]
-        description = data[3]
-        sotw_channel = data[4]
-        role = data[5]
-        await general_channel.send(
-            f"<@&{role.id}>: A new SotW is live! **{name}**, crafted by **{submitter}**!\n```{description}```"
-            f"Check it out @ <#{sotw_channel.id}>! And don't "
-            f"forget to submit your own ideas for the Seed of the Week!",
-            view=sotwview,
-        )
+        await command_functions.auto_create_new_sotw(client)
+        # data = await command_functions.auto_create_new_sotw(client)
+        # sotwview = views.SotwPingView()
+        # general_channel = data[0]
+        # name = data[1]
+        # submitter = data[2]
+        # description = data[3]
+        # sotw_channel = data[4]
+        # role = data[5]
+        # await general_channel.send(
+        #     f"<@&{role.id}>: A new SotW is live! **{name}**, crafted by **{submitter}**!\n```{description}```"
+        #     f"Check it out @ <#{sotw_channel.id}>! And don't "
+        #     f"forget to submit your own ideas for the Seed of the Week!",
+        #     view=sotwview,
+        # )
     else:
         pass
 

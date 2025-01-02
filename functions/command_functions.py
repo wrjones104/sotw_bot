@@ -12,6 +12,7 @@ from discord.ui import Modal, TextInput
 from discord.utils import get
 
 import db.constants as constants
+import views as views
 from flag_builder import chaos
 from functions.string_functions import parse_done_time, sortdict
 
@@ -39,14 +40,14 @@ class NewSubModal(Modal):
         await interaction.response.defer()
 
 
-async def get_flags(seed):
-    url = constants.url + f'/{constants.new_api_key}/{seed}'
-    headers = {
-        'Content-Type': 'application/json'
-    }
-    response = requests.request("GET", url, headers=headers)
-    data = response.json()
-    return data['data']['flags']
+# async def get_flags(seed):
+#     url = constants.url + f'/{constants.new_api_key}/{seed}'
+#     headers = {
+#         'Content-Type': 'application/json'
+#     }
+#     response = requests.request("GET", url, headers=headers)
+#     data = response.json()
+#     return data['data']['flags']
 
 
 async def generate_seed(flags, seed_desc):
@@ -62,9 +63,6 @@ async def generate_seed(flags, seed_desc):
     response = requests.request("POST", url, headers=headers, data=payload)
     data = response.json()
     print(data)
-    # if 'url' not in data:
-    #     await ctx.user.send('The randomizer didn\'t like your flags... try again!')
-    #     raise KeyError(f'API returned {data} for the following flagstring:{flags}')
     return data
 
 
@@ -74,7 +72,6 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         seed_link = seed['url']
     except TypeError:
         raise
-    # home = os.getcwd()
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: <{seed_link}>\n' \
@@ -127,15 +124,6 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    # os.chdir('../seedbot2000/db')
-    # with open('user_presets.json') as x:
-    #     preset_dict = json.load(x)
-    #     preset_dict['sotw']['flags'] = seed['flags']
-    #     preset_dict['sotw'][
-    #         'description'] = f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
-    #     with open('user_presets.json', 'w') as updatefile:
-    #         updatefile.write(json.dumps(preset_dict))
-    # os.chdir(home)
     con = sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
     cur = con.cursor()
     cur.execute(
@@ -165,7 +153,9 @@ async def auto_create_new_sotw(ctx):
     error_check = True
     badflags = ['']
     while error_check:
+        filecheck = False
         this_week = await get_possible_seeds(badflags)
+        print(this_week)
         if not this_week:
             print(f"{datetime.datetime.now()}: Proceeding with reserves...")
             chaotic = random.choices([True, False], weights=[1, 9], k=1)
@@ -183,6 +173,14 @@ async def auto_create_new_sotw(ctx):
                 name = reserves[str(rchoice)]['name']
             submitter = "SotW Bot"
             del_row = False
+        elif "ff6worldscollide.com" not in this_week[0][5]:
+            flags = this_week[0][4]
+            description = this_week[0][3]
+            name = this_week[0][2]
+            submitter = this_week[0][1]
+            del_row = True
+            seed_link = this_week[0][5]
+            filecheck = True
         else:
             flags = this_week[0][4]
             description = this_week[0][3]
@@ -190,12 +188,18 @@ async def auto_create_new_sotw(ctx):
             submitter = this_week[0][1]
             del_row = True
         try:
-            seed = await generate_seed(flags, description)
-            seed_link = seed['url']
-            error_check = False
+            if not filecheck:
+                getseed = await generate_seed(flags, description)
+                seed = getseed['seed_id']
+                seed_link = getseed['url']
+                error_check = False
+            else:
+                seed = False
+                error_check = False
         except KeyError:
             print(f'{datetime.datetime.now()}: There was a flag error with this submission: {name} from {submitter}')
             badflags.append(flags)
+
     message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: <{seed_link}>\n' \
@@ -221,8 +225,8 @@ async def auto_create_new_sotw(ctx):
         f"-----------------------------------\nHere begins the **{name}** Seed of the Week\n"
         f"-----------------------------------")
     create_date = str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S"))
-    sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link,
-                                 "creator": 'Auto-Rolled', "description": description, "seed_id": seed['seed_id'],
+    sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link, "flags": flags,
+                                 "creator": 'Auto-Rolled', "description": description, "seed_id": seed,
                                  "create_date": create_date,
                                  "header_msg_id": str(sotw_header.id), "leaderboard_header_id": str(leader_header.id),
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
@@ -239,6 +243,13 @@ async def auto_create_new_sotw(ctx):
             except Exception:
                 print(f'{datetime.datetime.now()}: Failed to remove role from {member}')
     role = get(sotw_guild.roles, name='SotW Ping')
+    sotwview = views.SotwPingView()
+    await general_channel.send(
+        f"<@&{role.id}>: A new SotW is live! **{name}**, crafted by **{submitter}**!\n```{description}```"
+        f"Check it out @ <#{sotw_channel.id}>! And don't "
+        f"forget to submit your own ideas for the Seed of the Week!",
+        view=sotwview,
+        )
 
     # Here, we force push the sotw_db.json file out to the Google Cloud bucket.
     # This allows the website to pull updated SotW data immediately.
@@ -248,15 +259,6 @@ async def auto_create_new_sotw(ctx):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    # os.chdir('../seedbot2000/db')
-    # with open('user_presets.json') as x:
-    #     preset_dict = json.load(x)
-    #     preset_dict['sotw']['flags'] = seed['flags']
-    #     preset_dict['sotw'][
-    #         'description'] = f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
-    #     with open('user_presets.json', 'w') as updatefile:
-    #         updatefile.write(json.dumps(preset_dict))
-    # os.chdir(home)
     con = sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
     cur = con.cursor()
     cur.execute(

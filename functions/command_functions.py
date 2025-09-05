@@ -3,7 +3,6 @@ import json
 import os
 import random
 import subprocess
-import sqlite3
 
 import pygsheets
 import requests
@@ -38,16 +37,6 @@ class NewSubModal(Modal):
 
     async def on_submit(self, interaction: Interaction, /) -> None:
         await interaction.response.defer()
-
-
-# async def get_flags(seed):
-#     url = constants.url + f'/{constants.new_api_key}/{seed}'
-#     headers = {
-#         'Content-Type': 'application/json'
-#     }
-#     response = requests.request("GET", url, headers=headers)
-#     data = response.json()
-#     return data['data']['flags']
 
 
 async def generate_seed(flags, seed_desc):
@@ -124,14 +113,26 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    con = sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
-    cur = con.cursor()
-    cur.execute(
-        "UPDATE presets SET flags = (?), description = (?) WHERE preset_name = (?)", (flags, f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```", 'SotW')
-    )
-    con.commit()
-    con.close()
 
+    api_url = 'https://seedbot.net/api/update_sotw_preset/'
+    secret_key = constants.webapp_api_key
+
+    payload = {
+        'flags': flags,
+        'description': f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
+    }
+
+    headers = {
+        'Authorization': f'Bearer {secret_key}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(api_url, data=json.dumps(payload), headers=headers)
+
+    if response.status_code == 200:
+        print("Successfully updated SotW preset.")
+    else:
+        print(f"Failed to update preset. Status: {response.status_code}, Response: {response.text}")
 
 
 async def auto_create_new_sotw(ctx):
@@ -259,15 +260,25 @@ async def auto_create_new_sotw(ctx):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    con = sqlite3.connect('../seedbot2000/db/seeDBot.sqlite')
-    cur = con.cursor()
-    cur.execute(
-        "UPDATE presets SET flags = (?), description = (?) WHERE preset_name = (?)", (flags, f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```", 'SotW')
-    )
-    con.commit()
-    con.close()
+    api_url = 'http://seedbot.net/api/update_sotw_preset/'
+    secret_key = constants.webapp_api_key
 
-    return general_channel, name, submitter, description, sotw_channel, role
+    payload = {
+        'flags': flags,
+        'description': f"Practice for this week's SotW: **{name}** by {submitter}\n```{description}```"
+    }
+
+    headers = {
+        'Authorization': f'Bearer {secret_key}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(api_url, data=json.dumps(payload), headers=headers)
+
+    if response.status_code == 200:
+        print("Successfully updated SotW preset.")
+    else:
+        print(f"Failed to update preset. Status: {response.status_code}, Response: {response.text}")
 
 
 async def enter_time(ctx, time):

@@ -260,7 +260,7 @@ async def auto_create_new_sotw(ctx):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    api_url = 'http://seedbot.net/api/update_sotw_preset/'
+    api_url = 'https://seedbot.net/api/update_sotw_preset/'
     secret_key = constants.webapp_api_key
 
     payload = {

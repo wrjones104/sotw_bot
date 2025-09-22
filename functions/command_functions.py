@@ -114,7 +114,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
 
     # This next bit of code updates the SotW SeedBot preset.
 
-    api_url = 'https://seedbot.net/api/update_sotw_preset/'
+    api_url = 'https://seedbot.net/api/update_sotw_preset/' if constants.env_type == "production" else 'http://127.0.0.1:8000/api/update_sotw_preset/'
     secret_key = constants.webapp_api_key
 
     payload = {
@@ -260,7 +260,7 @@ async def auto_create_new_sotw(ctx):
         pass
 
     # This next bit of code updates the SotW SeedBot preset.
-    api_url = 'https://seedbot.net/api/update_sotw_preset/'
+    api_url = 'https://seedbot.net/api/update_sotw_preset/' if constants.env_type == "production" else 'http://127.0.0.1:8000/api/update_sotw_preset/'
     secret_key = constants.webapp_api_key
 
     payload = {

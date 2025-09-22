@@ -380,7 +380,7 @@ async def new_submission(ctx):
     except KeyError:
         return await ctx.user.send(
             'There seems to be something wrong with your flags - '
-            'double-check them and try again!')
+            f'double-check them and try again!\n```{str(modal.sotwflags)}```')
 
 
 async def new_reserve_choice(ctx):

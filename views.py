@@ -20,10 +20,11 @@ class SotwPingView(View):
             with open("sotw_db.json") as x:
                 sotw_db = json.load(x)
                 flags = sotw_db[str(len(sotw_db))]['flags']
+                env = sotw_db[str(len(sotw_db))].get('env', 'main')
             if not flags:
                 await interaction.followup.send(f'Sorry, there\'s a problem with the flags for this one... this can happen when the SotW is based on a previous randomizer version. Please reach out to **{sotw_db[str(len(sotw_db))]["submitter"]}** to see if they can provide a practice seed instead.', ephemeral=True)
             else:
-                seedlink = await generate_seed(flags, False)
+                seedlink = await generate_seed(flags, False, env=env)
                 await interaction.followup.send(f'Here\'s your practice seed - good luck!\n{seedlink["url"]}',
                                                 ephemeral=True)
         except (discord.errors.HTTPException, discord.errors.NotFound):

@@ -32,6 +32,15 @@ class NewSubModal(Modal):
         style=TextStyle.paragraph,
     )
 
+    sotwapi = TextInput(
+        label="API Environment (main or dev)",
+        placeholder="main",
+        default="main",
+        min_length=3,
+        max_length=4,
+        style=TextStyle.short,
+    )
+
     def __init__(self, title: str) -> None:
         super().__init__(title=title, timeout=None)
 
@@ -39,10 +48,23 @@ class NewSubModal(Modal):
         await interaction.response.defer()
 
 
-async def generate_seed(flags, seed_desc):
-    url = constants.url
+def _get_env_from_submission(submission_data, default='main'):
+    try:
+        # Also check for empty string
+        env = submission_data[7]
+        return env if env else default
+    except (IndexError, TypeError):
+        return default
+
+
+async def generate_seed(flags, seed_desc, env=None):
+    if env not in constants.FF6WC_APIS:
+        env = constants.DEFAULT_API
+
+    api_config = constants.FF6WC_APIS[env]
+    url = api_config["url"]
     payload = json.dumps({
-        "key": constants.new_api_key,
+        "key": api_config["key"],
         "flags": flags,
         "description": seed_desc
     })
@@ -55,9 +77,11 @@ async def generate_seed(flags, seed_desc):
     return data
 
 
-async def create_new_sotw(ctx, name, submitter, flags, description):
+async def create_new_sotw(ctx, name, submitter, flags, description, env=None):
+    if env not in constants.FF6WC_APIS:
+        env = constants.DEFAULT_API
     try:
-        seed = await generate_seed(flags, description)
+        seed = await generate_seed(flags, description, env)
         seed_link = seed['url']
     except TypeError:
         raise
@@ -90,6 +114,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         f"-----------------------------------")
     sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link,
                                  "creator": str(ctx.user.name), "description": description, "seed_id": seed['seed_id'],
+                                 "env": env,
                                  "create_date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                                  "header_msg_id": str(sotw_header.id), "leaderboard_header_id": str(leader_header.id),
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
@@ -165,6 +190,7 @@ async def auto_create_new_sotw(ctx):
                 flags = chaos()
                 description = "There weren't any submissions for me to roll, so now you must face the CHAOS!"
                 name = f"Chaos {random.choice(['Ensues', 'Reigns', 'Rains Down', 'Upon Ye Mortals', 'is Lyfe', 'Eternal', 'Infinite'])}"
+                env = "main"
             else:
                 with open('db/reserves.json') as r:
                     reserves = json.load(r)
@@ -172,6 +198,7 @@ async def auto_create_new_sotw(ctx):
                 flags = reserves[str(rchoice)]['flags']
                 description = reserves[str(rchoice)]['description']
                 name = reserves[str(rchoice)]['name']
+                env = reserves[str(rchoice)].get('env', 'main')
             submitter = "SotW Bot"
             del_row = False
         elif "ff6worldscollide.com" not in this_week[0][5]:
@@ -182,15 +209,17 @@ async def auto_create_new_sotw(ctx):
             del_row = True
             seed_link = this_week[0][5]
             filecheck = True
+            env = "main"
         else:
             flags = this_week[0][4]
             description = this_week[0][3]
             name = this_week[0][2]
             submitter = this_week[0][1]
             del_row = True
+            env = _get_env_from_submission(this_week[0])
         try:
             if not filecheck:
-                getseed = await generate_seed(flags, description)
+                getseed = await generate_seed(flags, description, env)
                 seed = getseed['seed_id']
                 seed_link = getseed['url']
                 error_check = False
@@ -228,6 +257,7 @@ async def auto_create_new_sotw(ctx):
     create_date = str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S"))
     sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link, "flags": flags,
                                  "creator": 'Auto-Rolled', "description": description, "seed_id": seed,
+                                 "env": env,
                                  "create_date": create_date,
                                  "header_msg_id": str(sotw_header.id), "leaderboard_header_id": str(leader_header.id),
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
@@ -372,8 +402,11 @@ async def new_submission(ctx):
     await ctx.response.send_modal(modal)
     await modal.wait()
     try:
-        link = await generate_seed(str(modal.sotwflags), str(modal.sotwdesc))
-        await write_new_submission(ctx, modal.sotwname, modal.sotwflags, modal.sotwdesc, link['url'])
+        env = str(modal.sotwapi).lower().strip()
+        if env not in constants.FF6WC_APIS:
+            env = constants.DEFAULT_API
+        link = await generate_seed(str(modal.sotwflags), str(modal.sotwdesc), env)
+        await write_new_submission(ctx, modal.sotwname, modal.sotwflags, modal.sotwdesc, link['url'], env)
         return await ctx.user.send(
             'Your submission has been received! Check out the full submission list here:'
             ' <http://seedbot.net/sotw-submissions>')
@@ -383,25 +416,7 @@ async def new_submission(ctx):
             f'double-check them and try again!\n```{str(modal.sotwflags)}```')
 
 
-async def new_reserve_choice(ctx):
-    modal = NewSubModal("Enter the details for the new reserve!")
-    await ctx.response.send_modal(modal)
-    await modal.wait()
-    try:
-        link = await generate_seed(str(modal.sotwflags), str(modal.sotwdesc))
-        if not link:
-            return await ctx.user.send('There seems to be something wrong with your flags - '
-                                       'double-check them and try again!')
-        await write_new_reserve(ctx, modal.sotwname, modal.sotwflags, modal.sotwdesc)
-        return await ctx.user.send(
-            'Your reserve submission has been received!')
-    except KeyError:
-        return await ctx.user.send(
-            'There seems to be something wrong with your flags - '
-            'double-check them and try again!')
-
-
-async def write_new_submission(ctx, name, flags, desc, link):
+async def write_new_submission(ctx, name, flags, desc, link, env):
     gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
     sh = gc.open(constants.sheetname)
     wks = sh[0]
@@ -411,10 +426,31 @@ async def write_new_submission(ctx, name, flags, desc, link):
 
     wks.insert_rows(lastrow, number=1,
                     values=[str(datetime.datetime.now()), str(ctx.user.name), str(name), str(desc), str(flags),
-                            str(link)])
+                            str(link), "", str(env)])
 
 
-async def write_new_reserve(ctx, name, flags, desc):
+async def new_reserve_choice(ctx):
+    modal = NewSubModal("Enter the details for the new reserve!")
+    await ctx.response.send_modal(modal)
+    await modal.wait()
+    try:
+        env = str(modal.sotwapi).lower().strip()
+        if env not in constants.FF6WC_APIS:
+            env = constants.DEFAULT_API
+        link = await generate_seed(str(modal.sotwflags), str(modal.sotwdesc), env)
+        if not link:
+            return await ctx.user.send('There seems to be something wrong with your flags - '
+                                       'double-check them and try again!')
+        await write_new_reserve(ctx, modal.sotwname, modal.sotwflags, modal.sotwdesc, env)
+        return await ctx.user.send(
+            'Your reserve submission has been received!')
+    except KeyError:
+        return await ctx.user.send(
+            'There seems to be something wrong with your flags - '
+            f'double-check them and try again!\n```{str(modal.sotwflags)}```')
+
+
+async def write_new_reserve(ctx, name, flags, desc, env):
     if not os.path.exists('db/reserves.json'):
         with open('db/reserves.json', 'w') as newfile:
             newfile.write(json.dumps({}))
@@ -422,7 +458,7 @@ async def write_new_reserve(ctx, name, flags, desc):
         settings = json.load(x)
     print('\n'.join([str(settings), str(ctx), str(name), str(flags), str(desc)]))
     settings[len(settings) + 1] = {"name": str(name), "submitter": str(ctx.user.name), "flags": str(flags),
-                                   "description": str(desc),
+                                   "description": str(desc), "env": env,
                                    "create_date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S"))}
     with open('db/reserves.json', 'w') as updatefile:
         updatefile.write(json.dumps(settings))
@@ -458,7 +494,9 @@ async def move_tabs(ctx, create_date, submitter, name, description, flags, seed_
     if del_row:
         wks.delete_rows(ctx[1])
 
-    wks2.insert_rows(lastrow, number=1, values=[create_date, submitter, name, description, flags, seed_link])
+    env = _get_env_from_submission(ctx[0])
+
+    wks2.insert_rows(lastrow, number=1, values=[create_date, submitter, name, description, flags, seed_link, env])
 
 
 async def auto_mode(ctx, choice):

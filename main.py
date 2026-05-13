@@ -115,9 +115,6 @@ async def sotw_new_submission(interaction: Interaction):
     await command_functions.new_submission(interaction)
 
 
-@sotw_group.command(name="reserve", description="Add a new reserve flagset")
-async def sotw_new_reserve(interaction: Interaction):
-    await command_functions.new_reserve_choice(interaction)
 
 
 @sotw_group.command(name="force", description="Force the bot to roll a new SotW")

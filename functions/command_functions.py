@@ -178,29 +178,37 @@ async def auto_create_new_sotw(ctx):
         return print(f'{datetime.datetime.now()}: Auto-mode set to FALSE - shutting down auto-roll workflow')
     error_check = True
     badflags = ['']
+    attempts = 0
+    is_flashback = False
     while error_check:
+        attempts += 1
         filecheck = False
         this_week = await get_possible_seeds(badflags)
-        print(this_week)
+
         if not this_week:
-            print(f"{datetime.datetime.now()}: Proceeding with reserves...")
-            chaotic = random.choices([True, False], weights=[1, 9], k=1)
-            print(f"Chaos toggle: {chaotic[0]}")
-            if chaotic[0]:
+            if attempts <= 5:
+                print(f"{datetime.datetime.now()}: No submissions found. Attempting Flashback (Attempt {attempts}/5)...")
+                this_week = await get_rolled_seed(badflags)
+                if this_week:
+                    is_flashback = True
+            
+            if not this_week:
+                print(f"{datetime.datetime.now()}: Proceeding with Chaos fallback...")
                 flags = chaos()
                 description = "There weren't any submissions for me to roll, so now you must face the CHAOS!"
                 name = f"Chaos {random.choice(['Ensues', 'Reigns', 'Rains Down', 'Upon Ye Mortals', 'is Lyfe', 'Eternal', 'Infinite'])}"
                 env = "main"
+                submitter = "SotW Bot"
+                del_row = False
+                error_check = False # Chaos always works
             else:
-                with open('db/reserves.json') as r:
-                    reserves = json.load(r)
-                rchoice = random.randint(1, len(reserves))
-                flags = reserves[str(rchoice)]['flags']
-                description = reserves[str(rchoice)]['description']
-                name = reserves[str(rchoice)]['name']
-                env = reserves[str(rchoice)].get('env', 'main')
-            submitter = "SotW Bot"
-            del_row = False
+                # We found a flashback seed
+                flags = this_week[0][4]
+                description = this_week[0][3]
+                name = this_week[0][2]
+                submitter = this_week[0][1]
+                env = _get_env_from_submission(this_week[0])
+                del_row = False
         elif "ff6worldscollide.com" not in this_week[0][5]:
             flags = this_week[0][4]
             description = this_week[0][3]
@@ -217,20 +225,23 @@ async def auto_create_new_sotw(ctx):
             submitter = this_week[0][1]
             del_row = True
             env = _get_env_from_submission(this_week[0])
+
         try:
-            if not filecheck:
-                getseed = await generate_seed(flags, description, env)
-                seed = getseed['seed_id']
-                seed_link = getseed['url']
-                error_check = False
-            else:
-                seed = False
-                error_check = False
+            if not error_check == False: # Skip if we already rolled chaos
+                if not filecheck:
+                    getseed = await generate_seed(flags, description, env)
+                    seed = getseed['seed_id']
+                    seed_link = getseed['url']
+                    error_check = False
+                else:
+                    seed = False
+                    error_check = False
         except KeyError:
             print(f'{datetime.datetime.now()}: There was a flag error with this submission: {name} from {submitter}')
             badflags.append(flags)
 
-    message_header = f'-----------------------------------\n**{name}** by: {submitter}, rolled on' \
+    sotw_name = f"Flashback: {name}" if is_flashback else name
+    message_header = f'-----------------------------------\n**{sotw_name}** by: {submitter}, rolled on' \
                      f' {str(datetime.datetime.now().strftime("%b %d %Y"))}\n' \
                      f'Seed Link: <{seed_link}>\n' \
                      f'```{description}```' \
@@ -255,7 +266,7 @@ async def auto_create_new_sotw(ctx):
         f"-----------------------------------\nHere begins the **{name}** Seed of the Week\n"
         f"-----------------------------------")
     create_date = str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S"))
-    sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link, "flags": flags,
+    sotw_db[len(sotw_db) + 1] = {"name": sotw_name, "submitter": submitter, "seed": seed_link, "flags": flags,
                                  "creator": 'Auto-Rolled', "description": description, "seed_id": seed,
                                  "env": env,
                                  "create_date": create_date,
@@ -276,7 +287,7 @@ async def auto_create_new_sotw(ctx):
     role = get(sotw_guild.roles, name='SotW Ping')
     sotwview = views.SotwPingView()
     await general_channel.send(
-        f"<@&{role.id}>: A new SotW is live! **{name}**, crafted by **{submitter}**!\n```{description}```"
+        f"<@&{role.id}>: A new SotW is live! **{sotw_name}**, crafted by **{submitter}**!\n```{description}```"
         f"Check it out @ <#{sotw_channel.id}>! And don't "
         f"forget to submit your own ideas for the Seed of the Week!",
         view=sotwview,
@@ -429,39 +440,6 @@ async def write_new_submission(ctx, name, flags, desc, link, env):
                             str(link), "", str(env)])
 
 
-async def new_reserve_choice(ctx):
-    modal = NewSubModal("Enter the details for the new reserve!")
-    await ctx.response.send_modal(modal)
-    await modal.wait()
-    try:
-        env = str(modal.sotwapi).lower().strip()
-        if env not in constants.FF6WC_APIS:
-            env = constants.DEFAULT_API
-        link = await generate_seed(str(modal.sotwflags), str(modal.sotwdesc), env)
-        if not link:
-            return await ctx.user.send('There seems to be something wrong with your flags - '
-                                       'double-check them and try again!')
-        await write_new_reserve(ctx, modal.sotwname, modal.sotwflags, modal.sotwdesc, env)
-        return await ctx.user.send(
-            'Your reserve submission has been received!')
-    except KeyError:
-        return await ctx.user.send(
-            'There seems to be something wrong with your flags - '
-            f'double-check them and try again!\n```{str(modal.sotwflags)}```')
-
-
-async def write_new_reserve(ctx, name, flags, desc, env):
-    if not os.path.exists('db/reserves.json'):
-        with open('db/reserves.json', 'w') as newfile:
-            newfile.write(json.dumps({}))
-    with open('db/reserves.json') as x:
-        settings = json.load(x)
-    print('\n'.join([str(settings), str(ctx), str(name), str(flags), str(desc)]))
-    settings[len(settings) + 1] = {"name": str(name), "submitter": str(ctx.user.name), "flags": str(flags),
-                                   "description": str(desc), "env": env,
-                                   "create_date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S"))}
-    with open('db/reserves.json', 'w') as updatefile:
-        updatefile.write(json.dumps(settings))
 
 
 async def get_possible_seeds(badflags):
@@ -474,12 +452,40 @@ async def get_possible_seeds(badflags):
     try:
         print(f'{datetime.datetime.now()}: Getting possible flagsets')
         for n, x in enumerate(cells[1:]):
-            if x[6]:
+            if x[6] and x[4] not in badflags:
                 random_select.append([x, n + 2])
         print(f'{datetime.datetime.now()}: {len(random_select)} possible flagsets found!')
-        return random.choice(random_select)
+        if random_select:
+            return random.choice(random_select)
+        else:
+            return None
     except IndexError:
-        return
+        return None
+
+
+async def get_rolled_seed(badflags):
+    gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
+    sh = gc.open(constants.sheetname)
+    wks = sh[1]
+
+    cells = wks.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=True, returnas='matrix')
+    random_select = []
+    try:
+        print(f'{datetime.datetime.now()}: Getting archive flagsets')
+        # Exclude header (1) and the 10 most recent rolls (bottom 10)
+        eligible_rows = cells[1:-10] if len(cells) > 11 else []
+        for x in eligible_rows:
+            if x[4] not in badflags:
+                # Reformat to match sh[0] structure: [date, submitter, name, desc, flags, link, vetted, env]
+                # sh[1] structure: [date, submitter, name, desc, flags, link, env]
+                random_select.append([x[0], x[1], x[2], x[3], x[4], x[5], "", x[6]])
+        print(f'{datetime.datetime.now()}: {len(random_select)} archive flagsets found!')
+        if random_select:
+            return [random.choice(random_select), -1]
+        else:
+            return None
+    except IndexError:
+        return None
 
 
 async def move_tabs(ctx, create_date, submitter, name, description, flags, seed_link, del_row):

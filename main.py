@@ -53,6 +53,15 @@ class NewSotwModal(Modal):
         style=TextStyle.paragraph,
     )
 
+    sotwapi = TextInput(
+        label="API Environment (main or dev)",
+        placeholder="main",
+        default="main",
+        min_length=3,
+        max_length=4,
+        style=TextStyle.short,
+    )
+
     def __init__(self, title: str) -> None:
         super().__init__(title=title, timeout=None)
 
@@ -155,6 +164,7 @@ async def sotw_new_command(interaction: Interaction):
                 str(modal.sotwsubmitter),
                 str(modal.sotwflags),
                 str(modal.sotwdesc),
+                str(modal.sotwapi).lower().strip(),
             )
             try:
                 sotwview = views.SotwPingView()

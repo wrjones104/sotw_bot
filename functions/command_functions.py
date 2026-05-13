@@ -32,6 +32,15 @@ class NewSubModal(Modal):
         style=TextStyle.paragraph,
     )
 
+    sotwapi = TextInput(
+        label="API Environment (main or dev)",
+        placeholder="main",
+        default="main",
+        min_length=3,
+        max_length=4,
+        style=TextStyle.short,
+    )
+
     def __init__(self, title: str) -> None:
         super().__init__(title=title, timeout=None)
 
@@ -39,10 +48,14 @@ class NewSubModal(Modal):
         await interaction.response.defer()
 
 
-async def generate_seed(flags, seed_desc):
-    url = constants.url
+async def generate_seed(flags, seed_desc, env=None):
+    if env not in constants.FF6WC_APIS:
+        env = constants.DEFAULT_API
+
+    api_config = constants.FF6WC_APIS[env]
+    url = api_config["url"]
     payload = json.dumps({
-        "key": constants.new_api_key,
+        "key": api_config["key"],
         "flags": flags,
         "description": seed_desc
     })
@@ -55,9 +68,9 @@ async def generate_seed(flags, seed_desc):
     return data
 
 
-async def create_new_sotw(ctx, name, submitter, flags, description):
+async def create_new_sotw(ctx, name, submitter, flags, description, env=None):
     try:
-        seed = await generate_seed(flags, description)
+        seed = await generate_seed(flags, description, env)
         seed_link = seed['url']
     except TypeError:
         raise
@@ -90,6 +103,7 @@ async def create_new_sotw(ctx, name, submitter, flags, description):
         f"-----------------------------------")
     sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link,
                                  "creator": str(ctx.user.name), "description": description, "seed_id": seed['seed_id'],
+                                 "env": env or constants.DEFAULT_API,
                                  "create_date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                                  "header_msg_id": str(sotw_header.id), "leaderboard_header_id": str(leader_header.id),
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
@@ -174,6 +188,7 @@ async def auto_create_new_sotw(ctx):
                 name = reserves[str(rchoice)]['name']
             submitter = "SotW Bot"
             del_row = False
+            env = "main"
         elif "ff6worldscollide.com" not in this_week[0][5]:
             flags = this_week[0][4]
             description = this_week[0][3]
@@ -182,15 +197,20 @@ async def auto_create_new_sotw(ctx):
             del_row = True
             seed_link = this_week[0][5]
             filecheck = True
+            env = "main"
         else:
             flags = this_week[0][4]
             description = this_week[0][3]
             name = this_week[0][2]
             submitter = this_week[0][1]
             del_row = True
+            try:
+                env = this_week[0][7]
+            except IndexError:
+                env = "main"
         try:
             if not filecheck:
-                getseed = await generate_seed(flags, description)
+                getseed = await generate_seed(flags, description, env)
                 seed = getseed['seed_id']
                 seed_link = getseed['url']
                 error_check = False
@@ -228,6 +248,7 @@ async def auto_create_new_sotw(ctx):
     create_date = str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S"))
     sotw_db[len(sotw_db) + 1] = {"name": name, "submitter": submitter, "seed": seed_link, "flags": flags,
                                  "creator": 'Auto-Rolled', "description": description, "seed_id": seed,
+                                 "env": env,
                                  "create_date": create_date,
                                  "header_msg_id": str(sotw_header.id), "leaderboard_header_id": str(leader_header.id),
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
@@ -372,8 +393,11 @@ async def new_submission(ctx):
     await ctx.response.send_modal(modal)
     await modal.wait()
     try:
-        link = await generate_seed(str(modal.sotwflags), str(modal.sotwdesc))
-        await write_new_submission(ctx, modal.sotwname, modal.sotwflags, modal.sotwdesc, link['url'])
+        env = str(modal.sotwapi).lower().strip()
+        if env not in constants.FF6WC_APIS:
+            env = constants.DEFAULT_API
+        link = await generate_seed(str(modal.sotwflags), str(modal.sotwdesc), env)
+        await write_new_submission(ctx, modal.sotwname, modal.sotwflags, modal.sotwdesc, link['url'], env)
         return await ctx.user.send(
             'Your submission has been received! Check out the full submission list here:'
             ' <http://seedbot.net/sotw-submissions>')
@@ -381,6 +405,19 @@ async def new_submission(ctx):
         return await ctx.user.send(
             'There seems to be something wrong with your flags - '
             f'double-check them and try again!\n```{str(modal.sotwflags)}```')
+
+
+async def write_new_submission(ctx, name, flags, desc, link, env):
+    gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
+    sh = gc.open(constants.sheetname)
+    wks = sh[0]
+
+    cells = wks.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=False, returnas='matrix')
+    lastrow = len(cells)
+
+    wks.insert_rows(lastrow, number=1,
+                    values=[str(datetime.datetime.now()), str(ctx.user.name), str(name), str(desc), str(flags),
+                            str(link), "", str(env)])
 
 
 async def new_reserve_choice(ctx):
@@ -398,20 +435,7 @@ async def new_reserve_choice(ctx):
     except KeyError:
         return await ctx.user.send(
             'There seems to be something wrong with your flags - '
-            'double-check them and try again!')
-
-
-async def write_new_submission(ctx, name, flags, desc, link):
-    gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
-    sh = gc.open(constants.sheetname)
-    wks = sh[0]
-
-    cells = wks.get_all_values(include_tailing_empty_rows=False, include_tailing_empty=False, returnas='matrix')
-    lastrow = len(cells)
-
-    wks.insert_rows(lastrow, number=1,
-                    values=[str(datetime.datetime.now()), str(ctx.user.name), str(name), str(desc), str(flags),
-                            str(link)])
+            f'double-check them and try again!\n```{str(modal.sotwflags)}```')
 
 
 async def write_new_reserve(ctx, name, flags, desc):
@@ -458,7 +482,12 @@ async def move_tabs(ctx, create_date, submitter, name, description, flags, seed_
     if del_row:
         wks.delete_rows(ctx[1])
 
-    wks2.insert_rows(lastrow, number=1, values=[create_date, submitter, name, description, flags, seed_link])
+    try:
+        env = ctx[0][7]
+    except IndexError:
+        env = "main"
+
+    wks2.insert_rows(lastrow, number=1, values=[create_date, submitter, name, description, flags, seed_link, env])
 
 
 async def auto_mode(ctx, choice):

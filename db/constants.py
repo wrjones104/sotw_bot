@@ -29,8 +29,4 @@ FF6WC_APIS = {
 # Default API to use if none is specified
 DEFAULT_API = "main"
 
-# Legacy constants for backward compatibility (pointing to the bot's native environment)
-url = FF6WC_APIS[DEFAULT_API]["url"]
-new_api_key = FF6WC_APIS[DEFAULT_API]["key"]
-
 webapp_api_key = os.getenv("WEBAPP_API_KEY")

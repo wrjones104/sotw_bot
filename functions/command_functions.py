@@ -274,7 +274,8 @@ async def auto_create_new_sotw(ctx):
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
                                  "rankings_msg_id": str(rankings.id), "participants_msg_id": str(participants.id),
                                  "runners": {}}
-    await move_tabs(this_week, create_date, submitter, name, description, flags, seed_link, del_row)
+    if not is_flashback:
+        await move_tabs(this_week or [[]], create_date, submitter, name, description, flags, seed_link, del_row)
     with open('sotw_db.json', 'w') as updatefile:
         updatefile.write(json.dumps(sotw_db))
     role = get(sotw_guild.roles, name='seed-of-the-week')
@@ -472,10 +473,20 @@ async def get_rolled_seed(badflags):
     random_select = []
     try:
         print(f'{datetime.datetime.now()}: Getting archive flagsets')
-        # Exclude header (1) and the 10 most recent rolls (bottom 10)
-        eligible_rows = cells[1:-10] if len(cells) > 11 else []
-        for x in eligible_rows:
-            if x[4] not in badflags:
+        data_rows = cells[1:]  # Exclude header
+        if not data_rows:
+            return None
+
+        # Build a set of (name, flags) tuples from the 10 most recent archive entries
+        # to exclude them regardless of where they appear in the list
+        recent_count = min(10, len(data_rows))
+        recent_seeds = set()
+        for row in data_rows[-recent_count:]:
+            if len(row) > 4:
+                recent_seeds.add((row[2], row[4]))  # (name, flags)
+
+        for x in data_rows:
+            if len(x) > 4 and x[4] not in badflags and (x[2], x[4]) not in recent_seeds:
                 # Reformat to match sh[0] structure: [date, submitter, name, desc, flags, link, vetted, env]
                 # sh[1] structure: [date, submitter, name, desc, flags, link, env]
                 random_select.append([x[0], x[1], x[2], x[3], x[4], x[5], "", x[6]])

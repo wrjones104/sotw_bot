@@ -274,7 +274,8 @@ async def auto_create_new_sotw(ctx):
                                  "spoiler_splitter_id": str(spoiler_splitter.id),
                                  "rankings_msg_id": str(rankings.id), "participants_msg_id": str(participants.id),
                                  "runners": {}}
-    await move_tabs(this_week, create_date, submitter, name, description, flags, seed_link, del_row, is_flashback)
+    if not is_flashback:
+        await move_tabs(this_week or [[]], create_date, submitter, name, description, flags, seed_link, del_row)
     with open('sotw_db.json', 'w') as updatefile:
         updatefile.write(json.dumps(sotw_db))
     role = get(sotw_guild.roles, name='seed-of-the-week')
@@ -481,10 +482,11 @@ async def get_rolled_seed(badflags):
         recent_count = min(10, len(data_rows))
         recent_seeds = set()
         for row in data_rows[-recent_count:]:
-            recent_seeds.add((row[2], row[4]))  # (name, flags)
+            if len(row) > 4:
+                recent_seeds.add((row[2], row[4]))  # (name, flags)
 
         for x in data_rows:
-            if x[4] not in badflags and (x[2], x[4]) not in recent_seeds:
+            if len(x) > 4 and x[4] not in badflags and (x[2], x[4]) not in recent_seeds:
                 # Reformat to match sh[0] structure: [date, submitter, name, desc, flags, link, vetted, env]
                 # sh[1] structure: [date, submitter, name, desc, flags, link, env]
                 random_select.append([x[0], x[1], x[2], x[3], x[4], x[5], "", x[6]])
@@ -497,7 +499,7 @@ async def get_rolled_seed(badflags):
         return None
 
 
-async def move_tabs(ctx, create_date, submitter, name, description, flags, seed_link, del_row, is_flashback=False):
+async def move_tabs(ctx, create_date, submitter, name, description, flags, seed_link, del_row):
     gc = pygsheets.authorize(service_file='functions/sotw-bot-eda350e55a58.json')
     sh = gc.open(constants.sheetname)
     wks = sh[0]
@@ -511,9 +513,7 @@ async def move_tabs(ctx, create_date, submitter, name, description, flags, seed_
 
     env = _get_env_from_submission(ctx[0])
 
-    # Don't re-append flashback seeds to the archive — they're already there
-    if not is_flashback:
-        wks2.insert_rows(lastrow, number=1, values=[create_date, submitter, name, description, flags, seed_link, env])
+    wks2.insert_rows(lastrow, number=1, values=[create_date, submitter, name, description, flags, seed_link, env])
 
 
 async def auto_mode(ctx, choice):
